@@ -66,6 +66,8 @@ The evaluated architectures span four distinct paradigms:
 
 The top-performing model, EfficientNetV2-S with two-phase fine-tuning, achieved **99.61% test accuracy** with a macro-average ROC-AUC of 1.0000. Notably, **SalvationNet** — a Tri-Domain Adaptive Fusion Network conceived and implemented entirely by the author without any pre-trained weights — attained **98.63% accuracy** and a macro-average AUC of **0.9998** using only **1.15M parameters**. This places it ahead of architectures with 48 to 67 times more parameters, including Xception+InceptionResNetV2 (77.7M params, 98.05%) and InceptionResNetV2+CBAM (55.5M params, 97.85%). SalvationNet introduces a biologically motivated three-branch design that separately models color, texture, and morphological features — mirroring the systematic protocol employed by dermatologists in clinical examination — and fuses them through cross-domain attention and learned adaptive weighting.
 
+For a comprehensive treatment of all ten architectures, including detailed training curves, confusion matrices, ROC analyses, and flowcharts for every model, refer to the **[full research document (PDF)](docs/Comparative_Analysis_Deep_Learning_Skin_Disease.pdf)**.
+
 ---
 
 ## Dataset
@@ -404,7 +406,7 @@ skin-disease-classification/
 │   └── model_10_salvationnet.h5
 │
 ├── docs/
-│   └── Comparative_Analysis_Deep_Learning_Skin_Disease.docx
+│   └── Comparative_Analysis_Deep_Learning_Skin_Disease.pdf
 │
 ├── assets/
 │   ├── salvationnet_architecture.png
