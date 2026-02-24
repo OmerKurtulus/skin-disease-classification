@@ -409,17 +409,10 @@ skin-disease-classification/
 │   └── Comparative_Analysis_of_Deep_Learning_Architectures_for_Skin_Disease_Classification.pdf
 │
 ├── assets/
-│   ├── salvationnet_architecture.png
-│   ├── salvationnet_accuracy_loss.png
-│   ├── salvationnet_confusion_matrix.png
-│   └── salvationnet_roc_curves.png
-│
-└── results/
-    └── figures/
-        ├── model_01/
-        ├── model_02/
-        ├── ...
-        └── model_10/
+    ├── salvationnet_architecture.png
+    ├── salvationnet_accuracy_loss.png
+    ├── salvationnet_confusion_matrix.png
+    └── salvationnet_roc_curves.png
 ```
 
 ---
