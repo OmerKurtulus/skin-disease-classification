@@ -46,6 +46,8 @@
   - [ROC Curves and AUC Analysis](#roc-curves-and-auc-analysis)
   - [Summary of Original Contributions](#summary-of-original-contributions)
 - [Repository Structure](#repository-structure)
+- [Experiments Notebook](#experiments-notebook)
+- [Pre-trained Models](#pre-trained-models)
 - [Getting Started](#getting-started)
 - [Citation](#citation)
 - [Acknowledgments](#acknowledgments)
@@ -65,8 +67,6 @@ The evaluated architectures span four distinct paradigms:
 **(iv)** Attention-augmented and multi-scale approaches (InceptionResNetV2+CBAM, Xception+FPN), and a fully original architecture designed from scratch.
 
 The top-performing model, EfficientNetV2-S with two-phase fine-tuning, achieved **99.61% test accuracy** with a macro-average ROC-AUC of 1.0000. Notably, **SalvationNet** — a Tri-Domain Adaptive Fusion Network conceived and implemented entirely by the author without any pre-trained weights — attained **98.63% accuracy** and a macro-average AUC of **0.9998** using only **1.15M parameters**. This places it ahead of architectures with 48 to 67 times more parameters, including Xception+InceptionResNetV2 (77.7M params, 98.05%) and InceptionResNetV2+CBAM (55.5M params, 97.85%). SalvationNet introduces a biologically motivated three-branch design that separately models color, texture, and morphological features — mirroring the systematic protocol employed by dermatologists in clinical examination — and fuses them through cross-domain attention and learned adaptive weighting.
-
-For a comprehensive treatment of all ten architectures, including detailed training curves, confusion matrices, ROC analyses, and flowcharts for every model, refer to the **[full research document (PDF)](docs/Comparative_Analysis_of_Deep_Learning_Architectures_for_Skin_Disease_Classification.pdf)**.
 
 ---
 
@@ -97,7 +97,7 @@ The cleaning process removed artificially augmented images (superpixel transform
 
 ### Data Cleaning and Preparation
 
-The original 9,548-image dataset contained a significant proportion of artificially pre-processed images. Outlier analysis identified that 10.03% of images fell outside acceptable statistical norms. All synthetically modified images were removed, yielding 3,411 clinically authentic photographs. All images were resized to 224x224x3 for models operating at standard resolution, while the Xception+InceptionResNetV2 hybrid used native 299x299 input.
+The original 9,548-image dataset contained a significant proportion of artificially pre-processed images. Outlier analysis identified that 10.03% of images fell outside acceptable statistical norms. All synthetically modified images were removed, yielding 3,411 clinically authentic photographs. All images were resized to 224×224×3 for models operating at standard resolution, while the Xception+InceptionResNetV2 hybrid used native 299×299 input.
 
 ### Stratified Splitting and Leakage Audit
 
@@ -125,7 +125,7 @@ Inverse-frequency class weights were computed to compensate for the 4.52:1 imbal
 
 ### Data Augmentation
 
-Augmentation was applied exclusively to the training set and adapted per model architecture. The baseline strategy consisted of random rotation (±10 degrees), random zoom (±10%), and horizontal flipping. Models with deeper feature hierarchies or from-scratch training additionally incorporated random contrast (±5%) and random brightness (±5%) adjustments. No augmentation was applied to validation or test sets at any point.
+Augmentation was applied exclusively to the training set and adapted per model architecture. The baseline strategy consisted of random rotation (±10°), random zoom (±10%), and horizontal flipping. Models with deeper feature hierarchies or from-scratch training additionally incorporated random contrast (±5%) and random brightness (±5%) adjustments. No augmentation was applied to validation or test sets at any point.
 
 ### Training Callbacks
 
@@ -149,23 +149,23 @@ Class-level pixel intensity distributions and inter-channel correlations were fu
 
 ### Model 1 — Custom CNN (Baseline)
 
-A four-block convolutional network (32, 64, 128, 256 filters) with Batch Normalization and MaxPooling, trained from scratch using Adam optimizer and categorical crossentropy. Total parameter count: 1.24M. This model serves as the lower-bound reference; its **32.23% test accuracy** demonstrates severe overfitting and confirms that dermatological image classification requires either transfer learning or architecturally informed design.
+A four-block convolutional network (32→64→128→256 filters) with Batch Normalization and MaxPooling, trained from scratch using Adam optimizer and categorical crossentropy. Total parameter count: 1.24M. This model serves as the lower-bound reference; its **32.23% test accuracy** demonstrates severe overfitting and confirms that dermatological image classification requires either transfer learning or architecturally informed design.
 
 ### Model 2 — EfficientNetV2-S
 
-Two-phase transfer learning: Phase 1 freezes the EfficientNetV2-S backbone (pre-trained on ImageNet) and trains only the custom classification head (GlobalAveragePooling, BatchNorm, Dense(256)+L2, Dropout(0.5), Dense(5)). Phase 2 unfreezes the last 50 layers for fine-tuning at a learning rate of 1e-5. The Fused-MBConv blocks in EfficientNetV2-S provide faster training convergence compared to earlier EfficientNet variants. Total parameters: 21.5M. Training time per epoch: 7.52s. **Test accuracy: 99.61%** — the highest in this study, with Cohen's Kappa of 0.9948 and ROC-AUC of 1.0000.
+Two-phase transfer learning: Phase 1 freezes the EfficientNetV2-S backbone (pre-trained on ImageNet) and trains only the custom classification head (GlobalAveragePooling → BatchNorm → Dense(256)+L2 → Dropout(0.5) → Dense(5)). Phase 2 unfreezes the last 50 layers for fine-tuning at a learning rate of 1e-5. The Fused-MBConv blocks in EfficientNetV2-S provide faster training convergence compared to earlier EfficientNet variants. Total parameters: 21.5M. Training time per epoch: 7.52s. **Test accuracy: 99.61%** — the highest in this study, with Cohen's Kappa of 0.9948 and ROC-AUC of 1.0000.
 
 ### Model 3 — ConvNeXt Tiny
 
-A modernized pure-CNN architecture from Meta AI that incorporates design principles from Vision Transformers: patchify stem (4x4 non-overlapping convolution), 7x7 depthwise convolutions, inverted bottleneck blocks, GELU activation, and Layer Normalization. Two-phase training: 20 epochs frozen, 16 epochs fine-tuning the last 30 layers at 1e-5. Total parameters: 28.6M. Training time per epoch: 6.00s. **Test accuracy: 98.83%.**
+A modernized pure-CNN architecture from Meta AI that incorporates design principles from Vision Transformers: patchify stem (4×4 non-overlapping convolution), 7×7 depthwise convolutions, inverted bottleneck blocks, GELU activation, and Layer Normalization. Two-phase training: 20 epochs frozen, 16 epochs fine-tuning the last 30 layers at 1e-5. Total parameters: 28.6M. Training time per epoch: 6.00s. **Test accuracy: 98.83%.**
 
 ### Model 4 — DenseNet121 + InceptionV3
 
-A dual-backbone hybrid architecture that concatenates Global Average Pooled features from two frozen ImageNet-pretrained backbones: DenseNet121 (dense connectivity, feature reuse) and InceptionV3 (multi-scale inception modules). Each backbone feeds a parallel classification pathway (Dense, Dropout, Dense, Dropout) before concatenation and final classification. Bayesian hyperparameter optimization via Keras Tuner (15 trials, 40.25 min search). Total parameters: 30.0M (1.1M trainable). Best epoch: 17 of 32. Training time per epoch: 5.65s. **Test accuracy: 99.41%** — the best performance-to-speed tradeoff, achieving near-top accuracy at the second-fastest epoch time.
+A dual-backbone hybrid architecture that concatenates Global Average Pooled features from two frozen ImageNet-pretrained backbones: DenseNet121 (dense connectivity, feature reuse) and InceptionV3 (multi-scale inception modules). Each backbone feeds a parallel classification pathway (Dense→Dropout→Dense→Dropout) before concatenation and final classification. Bayesian hyperparameter optimization via Keras Tuner (15 trials, 40.25 min search). Total parameters: 30.0M (1.1M trainable). Best epoch: 17 of 32. Training time per epoch: 5.65s. **Test accuracy: 99.41%** — the best performance-to-speed tradeoff, achieving near-top accuracy at the second-fastest epoch time.
 
 ### Model 5 — ResNet50 + VGG16
 
-Combines residual learning (skip connections enabling gradient flow through 50 layers) with classical hierarchical feature extraction (VGG16's uniform 3x3 convolution stacks). Both backbones frozen with ImageNet weights. Bayesian optimization over 15 trials (24.43 min). Total parameters: 39.1M (821K trainable). Best epoch: 35 of 50. Training time per epoch: 3.34s. **Test accuracy: 98.83%.**
+Combines residual learning (skip connections enabling gradient flow through 50 layers) with classical hierarchical feature extraction (VGG16's uniform 3×3 convolution stacks). Both backbones frozen with ImageNet weights. Bayesian optimization over 15 trials (24.43 min). Total parameters: 39.1M (821K trainable). Best epoch: 35 of 50. Training time per epoch: 3.34s. **Test accuracy: 98.83%.**
 
 ### Model 6 — EfficientNetB0 + MobileNetV2
 
@@ -173,15 +173,15 @@ A lightweight hybrid pairing compound-scaled features (EfficientNetB0) with dept
 
 ### Model 7 — Xception + InceptionResNetV2
 
-The largest architecture evaluated, combining extreme inception (Xception, depthwise separable convolutions) with inception-residual modules (InceptionResNetV2) at native 299x299 resolution. Despite its 77.7M parameters (2.49M trainable), this model achieved **98.05% test accuracy** — lower than several smaller architectures, illustrating diminishing returns from parameter scaling. Bayesian optimization: 77.55 min search. Training time per epoch: 12.09s.
+The largest architecture evaluated, combining extreme inception (Xception, depthwise separable convolutions) with inception-residual modules (InceptionResNetV2) at native 299×299 resolution. Despite its 77.7M parameters (2.49M trainable), this model achieved **98.05% test accuracy** — lower than several smaller architectures, illustrating diminishing returns from parameter scaling. Bayesian optimization: 77.55 min search. Training time per epoch: 12.09s.
 
 ### Model 8 — InceptionResNetV2 + CBAM
 
-Integrates the Convolutional Block Attention Module (CBAM) on top of frozen InceptionResNetV2 features. CBAM applies sequential channel attention (via shared MLP with reduction ratio) and spatial attention (via 7x7 convolution on pooled feature maps) to refine feature representations. Total parameters: 55.5M (1.22M trainable). Bayesian optimization: 67.49 min search. Training time per epoch: 10.39s. **Test accuracy: 97.85%.**
+Integrates the Convolutional Block Attention Module (CBAM) on top of frozen InceptionResNetV2 features. CBAM applies sequential channel attention (via shared MLP with reduction ratio) and spatial attention (via 7×7 convolution on pooled feature maps) to refine feature representations. Total parameters: 55.5M (1.22M trainable). Bayesian optimization: 67.49 min search. Training time per epoch: 10.39s. **Test accuracy: 97.85%.**
 
 ### Model 9 — Xception + FPN
 
-Constructs a Feature Pyramid Network (FPN) on three scales of frozen Xception features: C3 (block4_sepconv2_act, 256 channels), C4 (block13_sepconv2_act, 728 channels), and C5 (block14_sepconv2_act, 1024 channels). Lateral connections with 1x1 convolutions and top-down pathway generate pyramid levels P3, P4, P5. The multi-scale classification head concatenates GlobalAveragePooled features from all three levels (768 total features). Fixed hyperparameters (no Keras Tuner search). Total parameters: 23.8M (2.97M trainable). Total training time: 4.98 min. Training time per epoch: 9.30s. **Test accuracy: 99.22%** with only 4 misclassifications out of 512 test samples.
+Constructs a Feature Pyramid Network (FPN) on three scales of frozen Xception features: C3 (block4_sepconv2_act, 256 channels), C4 (block13_sepconv2_act, 728 channels), and C5 (block14_sepconv2_act, 1024 channels). Lateral connections with 1×1 convolutions and top-down pathway generate pyramid levels P3, P4, P5. The multi-scale classification head concatenates GlobalAveragePooled features from all three levels (768 total features). Fixed hyperparameters (no Keras Tuner search). Total parameters: 23.8M (2.97M trainable). Total training time: 4.98 min. Training time per epoch: 9.30s. **Test accuracy: 99.22%** with only 4 misclassifications out of 512 test samples.
 
 ### Model 10 — SalvationNet (Novel Architecture)
 
@@ -227,9 +227,9 @@ A **fully original Tri-Domain Adaptive Fusion Network** designed and implemented
 
 **Transfer learning is indispensable for standard architectures in dermatological classification.** The baseline Custom CNN, trained from scratch with a conventional four-block design, achieved only 32.23% — barely above random chance for five classes. All transfer learning models exceeded 97.85%.
 
-**Hybrid dual-backbone models offer inconsistent returns relative to complexity.** While DenseNet121+InceptionV3 (30M params) achieved 99.41%, the largest hybrid — Xception+InceptionResNetV2 at 77.7M parameters — underperformed at 98.05%. This 2.5x parameter increase yielded a 1.36 percentage point decrease, suggesting that naive backbone concatenation does not guarantee proportional improvement.
+**Hybrid dual-backbone models offer inconsistent returns relative to complexity.** While DenseNet121+InceptionV3 (30M params) achieved 99.41%, the largest hybrid — Xception+InceptionResNetV2 at 77.7M parameters — underperformed at 98.05%. This 2.5× parameter increase yielded a 1.36 percentage point decrease, suggesting that naive backbone concatenation does not guarantee proportional improvement.
 
-**Architectural design can substitute for pre-trained knowledge.** SalvationNet, with only 1.15M parameters and no ImageNet pre-training, ranked 7th overall and outperformed two architectures with 48x and 67x more parameters respectively. This result challenges the prevailing assumption that from-scratch training on small medical datasets inevitably fails, and demonstrates that domain-specific inductive biases can compensate for the absence of transfer learning.
+**Architectural design can substitute for pre-trained knowledge.** SalvationNet, with only 1.15M parameters and no ImageNet pre-training, ranked 7th overall and outperformed two architectures with 48× and 67× more parameters respectively. This result challenges the prevailing assumption that from-scratch training on small medical datasets inevitably fails, and demonstrates that domain-specific inductive biases can compensate for the absence of transfer learning.
 
 **Parameter efficiency does not correlate with performance.** The correlation between total parameter count and test accuracy across the nine non-baseline models is weakly negative. EfficientNetB0+MobileNetV2 (8.3M) matched ConvNeXt Tiny (28.6M) at 98.83%, and SalvationNet (1.15M) surpassed InceptionResNetV2+CBAM (55.5M).
 
@@ -260,30 +260,30 @@ This tri-domain decomposition ensures that each disease category is addressed by
 
 The architecture consists of seven principal components, each serving a distinct functional role:
 
-**Stem Block** — A shared feature extraction front-end applied before domain branching: Conv2D(32, 3x3, stride=2) followed by Conv2D(32), Conv2D(64), and MaxPool2D. This produces 56x56x64 feature maps encoding low-level representations (edges, gradients, basic color and texture patterns) that are common to all three downstream branches. The stride-2 initial convolution and subsequent pooling achieve 4x spatial reduction before the computationally heavier parallel branches.
+**Stem Block** — A shared feature extraction front-end applied before domain branching: Conv2D(32, 3×3, stride=2) → Conv2D(32) → Conv2D(64) → MaxPool2D. This produces 56×56×64 feature maps encoding low-level representations (edges, gradients, basic color and texture patterns) that are common to all three downstream branches. The stride-2 initial convolution and subsequent pooling achieve 4× spatial reduction before the computationally heavier parallel branches.
 
-**Color Domain Branch (CDB)** — Two-stage multi-scale convolution using parallel 1x1, 3x3, and 5x5 filters with concatenation at each stage. The 1x1 convolutions capture pure inter-channel relationships (color ratios, relative intensities), while the 3x3 and 5x5 kernels capture spatial color gradients at different scales. Two stages of this operation progressively reduce spatial resolution to 14x14 while deepening the color representation. Primary diagnostic targets: Vitiligo, Hyperpigmentation.
+**Color Domain Branch (CDB)** — Two-stage multi-scale convolution using parallel 1×1, 3×3, and 5×5 filters with concatenation at each stage. The 1×1 convolutions capture pure inter-channel relationships (color ratios, relative intensities), while the 3×3 and 5×5 kernels capture spatial color gradients at different scales. Two stages of this operation progressively reduce spatial resolution to 14×14 while deepening the color representation. Primary diagnostic targets: Vitiligo, Hyperpigmentation.
 
-**Texture Domain Branch (TDB)** — Two-stage depthwise separable convolutions at three parallel kernel sizes (3x3, 5x5, 7x7) with concatenation. The depthwise separable factorization reduces parameter count significantly — a standard 7x7 convolution with C input and C output channels requires 49C² parameters, while its depthwise separable equivalent uses only 49C + C² — while still capturing texture patterns at multiple granularities. Output: 14x14 feature maps. Primary diagnostic targets: Acne, Nail Psoriasis.
+**Texture Domain Branch (TDB)** — Two-stage depthwise separable convolutions at three parallel kernel sizes (3×3, 5×5, 7×7) with concatenation. The depthwise separable factorization dramatically reduces parameter count — a standard 7×7 convolution with C input and C output channels requires 49C² parameters, while its depthwise separable equivalent uses only 49C + C² — while still capturing texture patterns at multiple granularities. Output: 14×14 feature maps. Primary diagnostic targets: Acne, Nail Psoriasis.
 
-**Morphology Domain Branch (MDB)** — Two-stage processing combining three complementary operations: edge-detection convolutions (capturing boundary and contour information), dilated convolutions (expanding the receptive field without increasing parameter count, enabling analysis of large-area morphological patterns), and average pooling (providing regional structural summarization). Output: 14x14 feature maps. Primary diagnostic target: SJS-TEN and its associated large-area lesion patterns.
+**Morphology Domain Branch (MDB)** — Two-stage processing combining three complementary operations: edge-detection convolutions (capturing boundary and contour information), dilated convolutions (expanding the receptive field without increasing parameter count, enabling analysis of large-area morphological patterns), and average pooling (providing regional structural summarization). Output: 14×14 feature maps. Primary diagnostic target: SJS-TEN and its associated large-area lesion patterns.
 
 **Cross-Domain Attention (CDA)** — Three bidirectional attention pathways that enable inter-branch information exchange:
-- Color to Texture: Chromatic cues modulate texture feature emphasis (e.g., color context around textured acne lesions)
-- Texture to Morphology: Textural patterns inform morphological boundary detection
-- Color to Morphology: Color distribution guides interpretation of large-area structural changes
+- Color → Texture: Chromatic cues modulate texture feature emphasis (e.g., color context around textured acne lesions)
+- Texture → Morphology: Textural patterns inform morphological boundary detection
+- Color → Morphology: Color distribution guides interpretation of large-area structural changes
 
 Each pathway computes attention weights from the source domain and applies them as multiplicative gates on the target domain's feature maps. This mechanism allows the network to leverage complementary cross-domain information — for instance, the color signature of erythema (from CDB) can inform the morphology branch (MDB) about regions where structural damage co-occurs with inflammatory discoloration.
 
-**Adaptive Domain Fusion Module (ADFM)** — After cross-domain attention, Global Average Pooling is applied to each branch output, and the three resulting vectors are concatenated. A small sub-network (Dense(128) followed by Dense(3, Softmax)) produces per-sample domain importance weights. These learned weights dynamically adjust the contribution of each branch for every input image: for a Vitiligo case, the network learns to emphasize Color Domain features; for an SJS-TEN case, Morphology Domain features receive higher weight. This adaptive mechanism replaces static concatenation with input-dependent fusion.
+**Adaptive Domain Fusion Module (ADFM)** — After cross-domain attention, Global Average Pooling is applied to each branch output, and the three resulting vectors are concatenated. A small sub-network (Dense(128) → Dense(3, Softmax)) produces per-sample domain importance weights. These learned weights dynamically adjust the contribution of each branch for every input image: for a Vitiligo case, the network learns to emphasize Color Domain features; for an SJS-TEN case, Morphology Domain features receive higher weight. This adaptive mechanism replaces static concatenation with input-dependent fusion.
 
-**Hierarchical Feature Refinement (HFR)** — The fused feature vector passes through two progressively narrowing dense layers with multi-level regularization: Dense(512) + BatchNorm + ReLU + Dropout(0.4), then Dense(192) + BatchNorm + ReLU + Dropout(0.3), and finally Dense(5) + Softmax. The 512 to 192 to 5 dimensionality reduction provides two levels of abstract feature refinement, while the decreasing dropout rates (0.4 to 0.3) balance regularization strength with information preservation.
+**Hierarchical Feature Refinement (HFR)** — The fused feature vector passes through two progressively narrowing dense layers with multi-level regularization: Dense(512) + BatchNorm + ReLU + Dropout(0.4) → Dense(192) + BatchNorm + ReLU + Dropout(0.3) → Dense(5) + Softmax. The 512→192→5 dimensionality reduction provides two levels of abstract feature refinement, while the decreasing dropout rates (0.4→0.3) balance regularization strength with information preservation.
 
 **Model Summary:**
 
 | Property | Value |
 |:---------|:------|
-| Input Resolution | 224 x 224 x 3 |
+| Input Resolution | 224 × 224 × 3 |
 | Total Parameters | 1,152,400 |
 | Trainable Parameters | 1,147,136 |
 | Pre-trained Weights | None (fully trained from scratch) |
@@ -343,7 +343,7 @@ Two observations warrant emphasis.
 
 First, **Acne and Hyperpigmentation achieved flawless 100% classification with zero misclassifications.** Acne is primarily characterized by textural features (captured by the TDB), while Hyperpigmentation is primarily characterized by chromatic features (captured by the CDB). The perfect performance on these two classes provides direct empirical validation that the domain-specific branch design captures its intended diagnostic features with high fidelity.
 
-Second, the 7 total misclassifications are concentrated along the Vitiligo–SJS-TEN boundary. Both conditions can present with areas of altered pigmentation on large skin surfaces: Vitiligo through melanocyte loss and SJS-TEN through inflammatory erythema and epidermal shedding. This confusion pattern is clinically understandable and represents a diagnostic boundary that challenges even experienced dermatologists in atypical presentations. The Vitiligo-to-Hyperpigmentation errors (2 cases) likely reflect cases where partial depigmentation was misinterpreted as localized hyperpigmentation — a phenomenon that can occur in mixed-type pigmentary disorders.
+Second, the 7 total misclassifications are concentrated along the Vitiligo–SJS-TEN boundary. Both conditions can present with areas of altered pigmentation on large skin surfaces: Vitiligo through melanocyte loss and SJS-TEN through inflammatory erythema and epidermal shedding. This confusion pattern is clinically understandable and represents a diagnostic boundary that challenges even experienced dermatologists in atypical presentations. The Vitiligo→Hyperpigmentation errors (2 cases) likely reflect cases where partial depigmentation was misinterpreted as localized hyperpigmentation — a phenomenon that can occur in mixed-type pigmentary disorders.
 
 ### ROC Curves and AUC Analysis
 
@@ -378,7 +378,7 @@ SalvationNet introduces four architectural components, each contributing to its 
 
 **4. Hierarchical Feature Refinement (HFR)** — Progressive dimensionality reduction with multi-level regularization (BatchNorm + decreasing Dropout) that refines fused representations before final classification.
 
-These components collectively enable a 1.15M-parameter network, trained entirely from scratch, to achieve 98.63% test accuracy — surpassing architectures with 48x to 67x more parameters that leverage millions of pre-trained ImageNet features. The result suggests that for specialized medical imaging tasks, architectures encoding domain-specific inductive biases can offer a compelling alternative to the prevailing paradigm of scaling pre-trained models.
+These components collectively enable a 1.15M-parameter network, trained entirely from scratch, to achieve 98.63% test accuracy — surpassing architectures with 48× to 67× more parameters that leverage millions of pre-trained ImageNet features. The result suggests that for specialized medical imaging tasks, architectures encoding domain-specific inductive biases can offer a compelling alternative to the prevailing paradigm of scaling pre-trained models.
 
 ---
 
@@ -391,28 +391,98 @@ skin-disease-classification/
 ├── LICENSE
 │
 ├── notebooks/
-│   └── skin_disease_classification.ipynb        # Complete training and evaluation pipeline
+│   └── skin_disease_classification_experiments.ipynb   # Complete training and evaluation pipeline
 │
 ├── models/
-│   ├── model_01_custom_cnn.h5
-│   ├── model_02_efficientnetv2s.h5
-│   ├── model_03_convnext_tiny.h5
-│   ├── model_04_densenet121_inceptionv3.h5
-│   ├── model_05_resnet50_vgg16.h5
-│   ├── model_06_efficientnetb0_mobilenetv2.h5
-│   ├── model_07_xception_inceptionresnetv2.h5
-│   ├── model_08_inceptionresnetv2_cbam.h5
-│   ├── model_09_xception_fpn.h5
-│   └── model_10_salvationnet.h5
+│   └── salvationnet/                                   # SalvationNet weights (hosted in repository)
+│       ├── best.keras                                  # Best validation accuracy checkpoint
+│       └── final.keras                                 # Final epoch checkpoint
 │
 ├── docs/
-│   └── Comparative_Analysis_of_Deep_Learning_Architectures_for_Skin_Disease_Classification.pdf
+│   └── Comparative_Analysis_Deep_Learning_Skin_Disease.docx
 │
 ├── assets/
-    ├── salvationnet_architecture.png
-    ├── salvationnet_accuracy_loss.png
-    ├── salvationnet_confusion_matrix.png
-    └── salvationnet_roc_curves.png
+│   ├── salvationnet_architecture.png
+│   ├── salvationnet_accuracy_loss.png
+│   ├── salvationnet_confusion_matrix.png
+│   └── salvationnet_roc_curves.png
+│
+└── results/
+    └── figures/
+        ├── model_01/
+        ├── model_02/
+        ├── ...
+        └── model_10/
+```
+
+> All 10 model weights (best.keras + final.keras for each) are available for download. SalvationNet is hosted directly in the repository under `models/`. The remaining 9 models are hosted externally due to file size constraints — see [Pre-trained Models](#pre-trained-models) for download links.
+
+---
+
+## Experiments Notebook
+
+The complete experimental pipeline — from data loading and exploratory analysis through all 10 model architectures to final comparative evaluation — is implemented in a single, self-contained Jupyter notebook:
+
+**[`notebooks/skin_disease_classification_experiments.ipynb`](notebooks/skin_disease_classification_experiments.ipynb)**
+
+The notebook is organized into 44 cells covering the full workflow:
+
+- **Data Pipeline** (Cells 0–18): Google Drive integration, library imports, constants definition, dataset loading, exploratory data analysis (class distribution, image dimensions, RGB color analysis), stratified train/val/test splitting with leakage verification, class weight computation, tf.data pipeline construction, and callback configuration.
+- **Model Training and Evaluation** (Cells 19–41): Each of the 10 architectures is implemented, trained, and evaluated within its own dedicated cell block — including model construction, compilation, training with callbacks, test set evaluation, confusion matrix visualization, ROC curve analysis, and model saving.
+- **Comparative Results** (Cells 42–43): Three publication-ready comparison tables summarizing all models by accuracy, precision, recall, F1-score, and per-epoch training time.
+
+All comments, docstrings, axis labels, and output messages are written in English. The notebook is designed to run end-to-end on Google Colab with a T4/A100 GPU runtime.
+
+---
+
+## Pre-trained Models
+
+Each model produces two saved checkpoints during training:
+
+| File | Description |
+|:-----|:------------|
+| `best.keras` | Weights from the epoch with the highest validation accuracy (saved by ModelCheckpoint). This is the recommended checkpoint for inference and evaluation. |
+| `final.keras` | Weights from the last training epoch before EarlyStopping terminated. Useful for analysis of training dynamics but may have slightly lower validation performance than `best.keras`. |
+
+**For inference and deployment, use `best.keras`.**
+
+### SalvationNet (In Repository)
+
+The SalvationNet model weights are hosted directly in this repository:
+
+```
+models/salvationnet/best.keras     # 98.63% test accuracy — recommended
+models/salvationnet/final.keras    # Final epoch checkpoint
+```
+
+### All Models (Google Drive)
+
+Due to GitHub file size constraints, the complete set of trained model weights for all 10 architectures (20 files total: best.keras + final.keras for each) is available via Google Drive:
+
+**[Download All Model Weights (Google Drive)](https://drive.google.com/drive/folders/1zEt8gTcA-4aU9vnDlxn7Hav9G2EcpRla?usp=sharing)**
+
+The Drive folder contains:
+
+| Model | Architecture | Test Accuracy | Files |
+|:------|:-------------|:------------:|:------|
+| Model 1 | Custom CNN (Baseline) | 32.23% | `best.keras`, `final.keras` |
+| Model 2 | EfficientNetV2-S | 99.61% | `best.keras`, `final.keras` |
+| Model 3 | ConvNeXt Tiny | 98.83% | `best.keras`, `final.keras` |
+| Model 4 | DenseNet121 + InceptionV3 | 99.41% | `best.keras`, `final.keras` |
+| Model 5 | ResNet50 + VGG16 | 98.83% | `best.keras`, `final.keras` |
+| Model 6 | EfficientNetB0 + MobileNetV2 | 98.83% | `best.keras`, `final.keras` |
+| Model 7 | Xception + InceptionResNetV2 | 98.05% | `best.keras`, `final.keras` |
+| Model 8 | InceptionResNetV2 + CBAM | 97.85% | `best.keras`, `final.keras` |
+| Model 9 | Xception + FPN | 99.22% | `best.keras`, `final.keras` |
+| Model 10 | SalvationNet | 98.63% | `best.keras`, `final.keras` |
+
+To load any model for inference:
+
+```python
+import tensorflow as tf
+
+model = tf.keras.models.load_model('path/to/best.keras')
+predictions = model.predict(preprocessed_images)
 ```
 
 ---
@@ -440,7 +510,7 @@ cd skin-disease-classification
 
 pip install tensorflow keras-tuner numpy pandas matplotlib seaborn scikit-learn
 
-jupyter notebook notebooks/skin_disease_classification.ipynb
+jupyter notebook notebooks/skin_disease_classification_experiments.ipynb
 ```
 
 ### Dataset
@@ -455,11 +525,11 @@ If you use this work, the SalvationNet architecture, or any of the trained model
 
 ```bibtex
 @misc{kurtulus2025skindisease,
-  author       = {Kurtulu\c{s}, \"{O}mer Faruk},
+  author       = {Kurtulu\c{s}, "{O}mer Faruk},
   title        = {Comparative Analysis of Deep Learning Architectures 
                   for Skin Disease Classification},
   year         = {2025},
-  institution  = {Atat\"{u}rk University, Department of Computer Engineering},
+  institution  = {Atat"{u}rk University, Department of Computer Engineering},
   note         = {Semester Project, Faculty of Engineering}
 }
 ```
