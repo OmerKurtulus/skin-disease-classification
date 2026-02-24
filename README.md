@@ -402,17 +402,11 @@ skin-disease-classification/
 │   └── Comparative_Analysis_Deep_Learning_Skin_Disease.docx
 │
 ├── assets/
-│   ├── salvationnet_architecture.png
-│   ├── salvationnet_accuracy_loss.png
-│   ├── salvationnet_confusion_matrix.png
-│   └── salvationnet_roc_curves.png
-│
-└── results/
-    └── figures/
-        ├── model_01/
-        ├── model_02/
-        ├── ...
-        └── model_10/
+    ├── salvationnet_architecture.png
+    ├── salvationnet_accuracy_loss.png
+    ├── salvationnet_confusion_matrix.png
+    └── salvationnet_roc_curves.png
+
 ```
 
 > All 10 model weights (best.keras + final.keras for each) are available for download. SalvationNet is hosted directly in the repository under `models/`. The remaining 9 models are hosted externally due to file size constraints — see [Pre-trained Models](#pre-trained-models) for download links.
@@ -431,7 +425,7 @@ The notebook is organized into 44 cells covering the full workflow:
 - **Model Training and Evaluation** (Cells 19–41): Each of the 10 architectures is implemented, trained, and evaluated within its own dedicated cell block — including model construction, compilation, training with callbacks, test set evaluation, confusion matrix visualization, ROC curve analysis, and model saving.
 - **Comparative Results** (Cells 42–43): Three publication-ready comparison tables summarizing all models by accuracy, precision, recall, F1-score, and per-epoch training time.
 
-All comments, docstrings, axis labels, and output messages are written in English. The notebook is designed to run end-to-end on Google Colab with a T4/A100 GPU runtime.
+The notebook is designed to run end-to-end on Google Colab with a T4/A100 GPU runtime.
 
 ---
 
